@@ -81,9 +81,16 @@ type Raft struct {
 	voteFor     int
 	log         Log
 
+	// Volatile state on all servers:
+	commitIndex int
+	lastApplied int
+
 	// Volatile state on leaders:
 	nextIndex  []int
 	matchIndex []int
+
+	applyCh   chan ApplyMsg
+	applyCond *sync.Cond
 }
 
 // return currentTerm and whether this server
@@ -111,6 +118,11 @@ func (rf *Raft) persist() {
 	// e.Encode(rf.yyy)
 	// data := w.Bytes()
 	// rf.persister.SaveRaftState(data)
+}
+
+func (rf *Raft) apply() {
+	// NOTE:
+	rf.applyCond.Broadcast()
 }
 
 //
@@ -170,13 +182,29 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 // the leader.
 //
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
-	index := -1
-	term := -1
-	isLeader := true
-
 	// Your code here (2B).
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 
-	return index, term, isLeader
+	if rf.state != Leader {
+		return -1, rf.currentTerm, false
+	}
+
+	index := rf.log.lastLog().Index + 1
+
+	log := Entry{
+		Command: command,
+		Term:    rf.currentTerm,
+		Index:   index,
+	}
+
+	// The leader appends the command to its log as a new entry,
+	// then issues AppendEntries RPCs in parallel to each of the other servers to replicate the entry.
+	rf.log.append(log)
+	// TODO: persisit
+	DPrintf(dLog, "在Term:%d开始处理Log:%v", rf.me, rf.currentTerm, log)
+	rf.appendEntries(false)
+	return index, rf.currentTerm, true
 }
 
 //
@@ -243,20 +271,63 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.heartBeat = 50 * time.Millisecond
 	rf.resetElectionTimer()
 
+	// latest term server has seen (initialized to 0 on first boot, increases monotonically)
 	rf.currentTerm = 0
+	// candidateId that received vote in current term (or null if none)
 	rf.voteFor = -1
+
+	// log entries;
+	// each entry contains command for state machine,
+	// and term when entry was received by leader (first index is 1)
 	rf.log = makeEmptyLog()
+
+	// 由于每个服务的Log的first index规定为1, 因此启动时在0位置压入一个LogEntry
 	rf.log.append(Entry{-1, 0, 0})
+
+	// index of highest log entry known to be committed (initialized to 0, increases monotonically)
+	rf.commitIndex = 0
+	// index of highest log entry applied to state machine (initialized to 0, increases monotonically)
+	rf.lastApplied = 0
 
 	rf.nextIndex = make([]int, len(rf.peers))
 	rf.matchIndex = make([]int, len(rf.peers))
+
+	// NOTE:
+	rf.applyCh = applyCh
+	rf.applyCond = sync.NewCond(&rf.mu)
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
 	DPrintf(dInfo, "[State: %s, Term: %d]启动", rf.me, rf.state, rf.currentTerm)
+
 	// start ticker goroutine to start elections
 	go rf.ticker()
 
+	// start applier goroutine send ApplyMsg to tester or service expects through the applyCh
+	go rf.applier()
+
 	return rf
+}
+
+func (rf *Raft) applier() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	for !rf.killed() {
+		// all server rule 1
+		if rf.commitIndex > rf.lastApplied && rf.log.lastLog().Index > rf.lastApplied {
+			rf.lastApplied++
+			applyMsg := ApplyMsg{
+				CommandValid: true,
+				Command:      rf.log.at(rf.lastApplied).Command,
+				CommandIndex: rf.lastApplied,
+			}
+			rf.mu.Unlock()
+			rf.applyCh <- applyMsg
+			rf.mu.Lock()
+		} else {
+			rf.applyCond.Wait()
+		}
+	}
 }
