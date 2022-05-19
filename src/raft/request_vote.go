@@ -106,14 +106,19 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	}
 
 	// If votedFor is null or candidateId,
-	// and candidate’s log is at least as up-to-date as receiver’s log, grant vote
-	// BUG: myLastLog = rf.log.lastLog() // candidate’s log is at least as up-to-date as receiver’s log,
-	if rf.voteFor == -1 || rf.voteFor == args.CandiateId {
-		rf.voteFor = args.CandiateId
-		DPrintf(dVote, "向s%d 投票", rf.me, args.CandiateId)
+	// and candidate’s log is at least as up-to-date as receiver’s log, grant vote (§5.2, §5.4)
+	// BUGFIX: myLastLog = rf.log.lastLog() // candidate’s log is at least as up-to-date as receiver’s log,
+	myLastLog := rf.log.lastLog()
+	upToDate := args.LastLogTerm > myLastLog.Term ||
+		(args.LastLogTerm == myLastLog.Term && args.LastLogIndx >= myLastLog.Index)
 
-		reply.Term = rf.currentTerm
+	if (rf.voteFor == -1 || rf.voteFor == args.CandiateId) && upToDate {
 		reply.VoteGranted = true
+		rf.voteFor = args.CandiateId
+		rf.resetElectionTimer()
+		DPrintf(dVote, "向s%d 投票", rf.me, args.CandiateId)
+	} else {
+		reply.VoteGranted = false
 	}
 	reply.Term = rf.currentTerm
 }
