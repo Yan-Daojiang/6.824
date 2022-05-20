@@ -1,6 +1,8 @@
 #!/bin/bash
 python dtest.py \
-TestFailAgree2B \
--n 2000 -p 10 -r 
-# TestBasicAgree2B \
-# TestRPCBytes2B \
+TestFailNoAgree2B \
+TestConcurrentStarts2B \
+TestRejoin2B \
+TestBackup2B \
+TestCount2B \
+-n 200 -p 10 -r 
