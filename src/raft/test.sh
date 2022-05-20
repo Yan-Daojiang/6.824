@@ -5,6 +5,7 @@ TestReElection2A \
 TestManyElections2A \
 TestBasicAgree2B \
 TestRPCBytes2B \
--n 5000 \
--p 4 \
+TestFailAgree2B \
+-n 10000 \
+-p 2 \
 -r 
