@@ -76,7 +76,7 @@ func (rf *Raft) leaderSendEntries(server int, args *AppendEntriesArgs) {
 			match := args.PrevLogIndex + len(args.Entries)
 			next := match + 1
 			rf.nextIndex[server] = max(rf.nextIndex[server], next)
-			rf.matchIndex[server] = max(rf.matchIndex[server], next)
+			rf.matchIndex[server] = max(rf.matchIndex[server], match)
 			DPrintf(dLeader, "S%d追加日志成功", rf.me, server)
 		} else {
 			// If a follower’s log is inconsistent with the leader’s, the AppendEntries consistency check will fail in the next AppendEntries RPC.
