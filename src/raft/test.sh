@@ -11,6 +11,6 @@ TestConcurrentStarts2B \
 TestRejoin2B \
 TestBackup2B \
 TestCount2B \
--n 20000 \
+-n 10000 \
 -p 2 \
 -r 
