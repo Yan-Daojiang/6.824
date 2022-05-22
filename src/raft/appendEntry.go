@@ -106,7 +106,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 
-	rf.resetElectionTimer()
 
 	// Rules for servers:
 	// All servers:
@@ -116,12 +115,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 
+  rf.resetElectionTimer()
 	// Rules for servers:
 	// Candiates (5.2):
 	// If AppendEntries RPC received from new leader: convert to follower
 	if rf.state == Candidate {
 		rf.state = Follower
-		rf.voteFor = -1
 	}
 
 	// 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm
