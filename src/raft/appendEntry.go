@@ -97,7 +97,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	// TODO: If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry)
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	DPrintf(dInfo, "在Term:%d收到s%d的AppendEntriesRPC, preLogIndex: %d, preLogTerm:%d, LogEntry:%v", rf.me, rf.currentTerm, args.LeaderId, args.PrevLogIndex, args.PrevLogTerm, args.Entries)
+	DPrintf(dInfo, "在Term:%d收到s%d的AppendEntriesRPC, preLogIndex: %d, preLogTerm:%d, LogEntry:%v, 当前日志%v", rf.me, rf.currentTerm, args.LeaderId, args.PrevLogIndex, args.PrevLogTerm, args.Entries, rf.log)
 
 	reply.Term = rf.currentTerm
 	reply.Success = false
@@ -105,7 +105,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if args.Term < rf.currentTerm {
 		return
 	}
-
 
 	// Rules for servers:
 	// All servers:
@@ -115,7 +114,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 
-  rf.resetElectionTimer()
+	rf.resetElectionTimer()
 	// Rules for servers:
 	// Candiates (5.2):
 	// If AppendEntries RPC received from new leader: convert to follower
@@ -167,7 +166,7 @@ func (rf *Raft) leaderCommitRule() {
 			}
 			if counter > len(rf.peers)/2 {
 				rf.commitIndex = n
-				DPrintf(dCommit, "leader尝试提交 index %v", rf.me, rf.commitIndex)
+				DPrintf(dCommit, "leader尝试提交 index %v, 当前日志%v", rf.me, rf.commitIndex, rf.log)
 				rf.apply()
 				break
 			}
