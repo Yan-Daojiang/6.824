@@ -132,11 +132,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		// delete the existing entry and all that follow it (§5.3)
 		if entry.Index <= rf.log.lastLog().Index && rf.log.at(entry.Index).Term != entry.Term {
 			rf.log.truncate(entry.Index)
+			rf.persist()
 		}
 
 		// 4. Append any new entries not already in the log
 		if entry.Index > rf.log.lastLog().Index {
 			rf.log.append(args.Entries[idx:]...)
+			rf.persist()
 			DPrintf(dLog, "追加日志Entry:%v, 当前日志:%v", rf.me, args.Entries[idx:], rf.log)
 			break
 		}

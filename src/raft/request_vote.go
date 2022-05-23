@@ -31,7 +31,6 @@ func (rf *Raft) candidateRequestVote(serverId int, args *RequestVoteArgs, voteCo
 	if reply.Term > args.Term {
 		DPrintf(dTerm, "s%d在新term:%d, 更新当前term", serverId, reply.Term)
 		rf.setNewTerm(reply.Term)
-		// TODO: persisit
 		return
 	}
 
@@ -115,6 +114,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	if (rf.voteFor == -1 || rf.voteFor == args.CandiateId) && upToDate {
 		reply.VoteGranted = true
 		rf.voteFor = args.CandiateId
+		rf.persist()
 		rf.resetElectionTimer()
 		DPrintf(dVote, "向s%d 投票", rf.me, args.CandiateId)
 	} else {

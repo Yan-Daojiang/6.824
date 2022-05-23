@@ -30,8 +30,8 @@ func (rf *Raft) setNewTerm(term int) {
 		rf.state = Follower
 		rf.currentTerm = term
 		rf.voteFor = -1
-		// TODO: persist
-		// rf.persist()
+
+		rf.persist()
 	}
 }
 
@@ -41,6 +41,9 @@ func (rf *Raft) LeaderElection() {
 	rf.state = Candidate
 	rf.currentTerm++
 	rf.voteFor = rf.me
+
+	rf.persist()
+
 	voteCounter++
 	rf.resetElectionTimer()
 

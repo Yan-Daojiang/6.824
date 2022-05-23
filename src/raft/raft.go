@@ -230,6 +230,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	// then issues AppendEntries RPCs in parallel to each of the other servers to replicate the entry.
 	rf.log.append(log)
 	// TODO: persisit
+	rf.persist()
 	DPrintf(dLog, "在Term:%d开始处理Log:%v", rf.me, rf.currentTerm, log)
 	rf.appendEntries(false)
 	return index, rf.currentTerm, true
@@ -326,7 +327,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
-
+	
 	DPrintf(dInfo, "[State: %s, Term: %d]启动", rf.me, rf.state, rf.currentTerm)
 
 	// start ticker goroutine to start elections
