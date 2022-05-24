@@ -27,10 +27,10 @@ func (rf *Raft) resetElectionTimer() {
 
 func (rf *Raft) setNewTerm(term int) {
 	if term > rf.currentTerm || rf.currentTerm == 0 {
+		DPrintf(dTerm, "根据RPC可知当前Term:%d已经过期,更新为:%d", rf.me, rf.currentTerm, term)
 		rf.state = Follower
 		rf.currentTerm = term
 		rf.voteFor = -1
-
 		rf.persist()
 	}
 }

@@ -29,7 +29,7 @@ func (rf *Raft) candidateRequestVote(serverId int, args *RequestVoteArgs, voteCo
 	}
 
 	if reply.Term > args.Term {
-		DPrintf(dTerm, "s%d在新term:%d, 更新当前term", serverId, reply.Term)
+		DPrintf(dTerm, "s%d在新term:%d, 更新当前term", rf.me, serverId, reply.Term)
 		rf.setNewTerm(reply.Term)
 		return
 	}
@@ -101,7 +101,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 	if args.Term > rf.currentTerm {
 		rf.setNewTerm(args.Term)
-		// TODO: persist
 	}
 
 	// If votedFor is null or candidateId,
@@ -116,7 +115,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		rf.voteFor = args.CandiateId
 		rf.persist()
 		rf.resetElectionTimer()
-		DPrintf(dVote, "向s%d 投票", rf.me, args.CandiateId)
+		DPrintf(dVote, "在Term:%d, 向s%d 投票", rf.me, rf.currentTerm, args.CandiateId)
 	} else {
 		reply.VoteGranted = false
 	}
