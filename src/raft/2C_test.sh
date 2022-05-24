@@ -7,5 +7,5 @@ TestFigure8Unreliable2C \
 TestReliableChurn2C \
 TestUnreliableChurn2C \
 -n 10000 \
--p 1 \
+-p 4 \
 -r

@@ -1,7 +1,7 @@
 python dtest.py \
 TestBasicAgree2B \
 TestRPCBytes2B \
-TestFailAgree2B
+TestFailAgree2B \
 TestFailNoAgree2B \
 TestConcurrentStarts2B \
 TestRejoin2B \
