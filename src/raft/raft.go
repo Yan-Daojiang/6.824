@@ -19,11 +19,14 @@ package raft
 
 import (
 	//	"bytes"
+	"bytes"
+	"log"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	//	"6.824/labgob"
+	"6.824/labgob"
 	"6.824/labrpc"
 )
 
@@ -118,6 +121,13 @@ func (rf *Raft) persist() {
 	// e.Encode(rf.yyy)
 	// data := w.Bytes()
 	// rf.persister.SaveRaftState(data)
+	w := new(bytes.Buffer)
+	e := labgob.NewEncoder(w)
+	e.Encode(rf.currentTerm)
+	e.Encode(rf.voteFor)
+	e.Encode(rf.log)
+	data := w.Bytes()
+	rf.persister.SaveRaftState(data)
 }
 
 func (rf *Raft) apply() {
@@ -145,6 +155,24 @@ func (rf *Raft) readPersist(data []byte) {
 	//   rf.xxx = xxx
 	//   rf.yyy = yyy
 	// }
+
+	if data == nil || len(data) < 1 { // bootstrap without any state?
+		return
+	}
+
+	r := bytes.NewBuffer(data)
+	d := labgob.NewDecoder(r)
+	var currentTerm int
+	var votedFor int
+	var logs Log
+
+	if d.Decode(&currentTerm) != nil || d.Decode(&votedFor) != nil || d.Decode(&logs) != nil {
+		log.Fatal("failed to read persist\n")
+	} else {
+		rf.currentTerm = currentTerm
+		rf.voteFor = votedFor
+		rf.log = logs
+	}
 }
 
 //
@@ -202,6 +230,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	// then issues AppendEntries RPCs in parallel to each of the other servers to replicate the entry.
 	rf.log.append(log)
 	// TODO: persisit
+	rf.persist()
 	DPrintf(dLog, "在Term:%d开始处理Log:%v", rf.me, rf.currentTerm, log)
 	rf.appendEntries(false)
 	return index, rf.currentTerm, true
@@ -298,7 +327,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
-
+	
 	DPrintf(dInfo, "[State: %s, Term: %d]启动", rf.me, rf.state, rf.currentTerm)
 
 	// start ticker goroutine to start elections
