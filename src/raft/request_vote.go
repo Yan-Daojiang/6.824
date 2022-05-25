@@ -17,6 +17,7 @@ func (rf *Raft) candidateRequestVote(serverId int, args *RequestVoteArgs, voteCo
 	reply := RequestVoteReply{}
 	ok := rf.sendRequestVote(serverId, args, &reply)
 	if !ok {
+		DPrintf(dError, "s%d没有响应请求选票RPC", rf.me, serverId)
 		return
 	}
 

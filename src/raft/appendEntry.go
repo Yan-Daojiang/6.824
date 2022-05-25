@@ -59,6 +59,7 @@ func (rf *Raft) leaderSendEntries(server int, args *AppendEntriesArgs) {
 	reply := AppendEntriesReply{}
 	ok := rf.sendAppendEntries(server, args, &reply)
 	if !ok {
+		DPrintf(dError, "s%d没有正确回应", rf.me, server)
 		return
 	}
 
@@ -66,6 +67,7 @@ func (rf *Raft) leaderSendEntries(server int, args *AppendEntriesArgs) {
 	defer rf.mu.Unlock()
 
 	if reply.Term > rf.currentTerm {
+		DPrintf(dTerm, "s%d的Term比当前term更新, Leader更新Term转为Follower", rf.me, server)
 		rf.setNewTerm(reply.Term)
 		return
 	}
