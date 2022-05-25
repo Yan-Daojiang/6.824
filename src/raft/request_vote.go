@@ -47,13 +47,13 @@ func (rf *Raft) candidateRequestVote(serverId int, args *RequestVoteArgs, voteCo
 		becomeLeader.Do(func() {
 			rf.state = Leader
 			DPrintf(dLeader, "在Term:%d获得大多数选票，State变换为Leader", rf.me, args.Term)
-
-			lastLogIndex := rf.log.lastLog().Index
-			for i := range rf.peers {
-				rf.nextIndex[i] = lastLogIndex + 1
-				rf.matchIndex[i] = 0
-			}
-			DPrintf(dLeader, "leader - nextIndex %#v", rf.me, rf.nextIndex)
+			// BUG:
+			// lastLogIndex := rf.log.lastLog().Index
+			// for i := range rf.peers {
+			// 	rf.nextIndex[i] = lastLogIndex + 1
+			// 	rf.matchIndex[i] = 0
+			// }
+			// DPrintf(dLeader, "leader - nextIndex %#v", rf.me, rf.nextIndex)
 			rf.appendEntries(true)
 		})
 	}
