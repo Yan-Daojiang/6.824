@@ -29,12 +29,12 @@ func (rf *Raft) appendEntries(heartbeat bool) {
 		if lastLog.Index >= rf.nextIndex[peer] || heartbeat {
 			nextIndex := rf.nextIndex[peer]
 
-			if lastLog.Index+1 < nextIndex {
-				nextIndex = lastLog.Index
-			}
-
 			if nextIndex <= 0 {
 				nextIndex = 1
+			}
+
+			if lastLog.Index+1 < nextIndex {
+				nextIndex = lastLog.Index
 			}
 
 			preLog := rf.log.at(nextIndex - 1)
@@ -79,7 +79,7 @@ func (rf *Raft) leaderSendEntries(server int, args *AppendEntriesArgs) {
 			next := match + 1
 			rf.nextIndex[server] = max(rf.nextIndex[server], next)
 			rf.matchIndex[server] = max(rf.matchIndex[server], match)
-			DPrintf(dLeader, "S%d追加日志成功", rf.me, server)
+			DPrintf(dLeader, "S%d追加日志成功nextIndex: %v, matchIndex:%v", rf.me, server, rf.nextIndex, rf.matchIndex)
 		} else {
 			// If a follower’s log is inconsistent with the leader’s, the AppendEntries consistency check will fail in the next AppendEntries RPC.
 			// After a rejection, the leader decrements nextIndex and retries the AppendEntries RPC.
