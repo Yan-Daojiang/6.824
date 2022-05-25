@@ -8,5 +8,5 @@ TestRejoin2B \
 TestBackup2B \
 TestCount2B \
 -n 10000 \
--p 1 \
+-p 16 \
 -r

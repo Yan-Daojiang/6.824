@@ -125,7 +125,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	}
 
 	// 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm
-	if args.PrevLogIndex > rf.log.len() || rf.log.at(args.PrevLogIndex).Term != args.PrevLogTerm {
+	if args.PrevLogIndex >= rf.log.len() || rf.log.at(args.PrevLogIndex).Term != args.PrevLogTerm {
 		return
 	}
 
